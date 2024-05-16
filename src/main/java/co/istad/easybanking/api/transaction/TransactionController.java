@@ -4,6 +4,7 @@ import co.istad.easybanking.base.BaseSuccess;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
+    @PreAuthorize("hasAuthority('SCOPE_staff:write') or hasAuthority('SCOPE_staff:update')")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public BaseSuccess<?> transactionBetweenAccount(@RequestBody @Valid FundTransferDto transactionAnADto){
@@ -26,6 +28,7 @@ public class TransactionController {
                 .data(fundTransferDto)
                 .build();
     }
+    @PreAuthorize("hasAuthority('SCOPE_staff:write') or hasAuthority('SCOPE_staff:update')")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/confirm")
     public BaseSuccess<?> confirmTransaction(@RequestBody @Valid TransactionAnADto transactionAnADto){
@@ -38,6 +41,7 @@ public class TransactionController {
                 .data(transactionAnADto.fTid())
                 .build();
     }
+    @PreAuthorize("hasAuthority('SCOPE_staff:write') or hasAuthority('SCOPE_staff:update')")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/depositMoney")
     public BaseSuccess<?> depositMoney(@RequestBody @Valid DepositAndWithdrawMoney transactionAnADto){
