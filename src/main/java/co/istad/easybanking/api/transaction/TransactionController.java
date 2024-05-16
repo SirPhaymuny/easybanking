@@ -1,0 +1,77 @@
+package co.istad.easybanking.api.transaction;
+
+import co.istad.easybanking.base.BaseSuccess;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
+
+@RestController
+@RequestMapping("/api/transactions")
+@RequiredArgsConstructor
+public class TransactionController {
+
+    private final TransactionService transactionService;
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping
+    public BaseSuccess<?> transactionBetweenAccount(@RequestBody @Valid FundTransferDto transactionAnADto){
+        TransactionAnADto fundTransferDto = transactionService.transferBetweenAccount(transactionAnADto);
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .timestamp(LocalDateTime.now())
+                .message("Transaction Successful")
+                .data(fundTransferDto)
+                .build();
+    }
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/confirm")
+    public BaseSuccess<?> confirmTransaction(@RequestBody @Valid TransactionAnADto transactionAnADto){
+       transactionService.confirmPayment(transactionAnADto);
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .timestamp(LocalDateTime.now())
+                .message("Transaction Successful")
+                .data(transactionAnADto.fTid())
+                .build();
+    }
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/depositMoney")
+    public BaseSuccess<?> depositMoney(@RequestBody @Valid DepositAndWithdrawMoney transactionAnADto){
+        transactionService.depositMoneyToAccount(transactionAnADto);
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .timestamp(LocalDateTime.now())
+                .message("Transaction Successful")
+                .data(" ")
+                .build();
+    }
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/billPayment")
+    public BaseSuccess<?> billPayment(@RequestBody @Valid BillPayment transactionAnADto){
+        transactionService.billPayment(transactionAnADto);
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .timestamp(LocalDateTime.now())
+                .message("Transaction Successful")
+                .data(" ")
+                .build();
+    }
+    @ResponseStatus(HttpStatus.CREATED)
+    @GetMapping("/getTransactionList")
+    public BaseSuccess<?> getListPageable(@RequestParam(required = false, defaultValue = "0") int pageNumber,
+                                          @RequestParam(required = false, defaultValue = "4") int pageSize){
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .timestamp(LocalDateTime.now())
+                .message("Transaction Successful")
+                .data(transactionService.findList(pageNumber,pageSize))
+                .build();
+    }
+}
