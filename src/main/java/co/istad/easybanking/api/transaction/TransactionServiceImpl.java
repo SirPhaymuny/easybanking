@@ -71,11 +71,8 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setTransactionType("Account Transfer");
 
         transactionRepository.save(transaction);
-        System.out.println(transaction.getDebitAccount().getId());
         FundToken fundTokenMap = transactionMapper.fromFundDtoToToken(transaction);
-        System.out.println(fundTokenMap);
         String fundToken = jwtTokenService.generateFundToken(fundTokenMap, "Fund Token", ft);
-
         return TransactionAnADto.builder()
                 .transactionToken(fundToken)
                 .build();
@@ -135,11 +132,6 @@ public class TransactionServiceImpl implements TransactionService {
     public String confirmPayment(TransactionAnADto token) {
             System.out.println("into else");
             try {
-                /*
-                 * Authentication auth = new
-                 * BearerTokenAuthenticationToken(token.transactionToken());
-                 * Authentication authentication = jwtAuthenticationProvider.authenticate(auth);
-                 */
                 jwtTokenService.JwtValidate(token.transactionToken());
                 Jwt jwtClaimsSet = jwtDecoder.decode(token.transactionToken());
                 System.out.println(jwtClaimsSet.getSubject());
