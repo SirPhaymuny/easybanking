@@ -15,7 +15,7 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-public class AccountServiceImpl implements AccountService{
+public class AccountServiceImpl implements AccountService {
 
     private final AccountRespository accountRespository;
     private final CustomerRepository customerRepository;
@@ -25,65 +25,71 @@ public class AccountServiceImpl implements AccountService{
     @Override
     public void createNewAccount(AccountCreateDto accountCreateDto) {
 
-            Customer customer = customerRepository.findById(accountCreateDto.customerId()).orElseThrow(
-                    ()-> new ResponseStatusException(HttpStatus.CONFLICT,"Customer Id not found")
-            );
-            Category category = categoryRespository.findCategoryByCategoryName(accountCreateDto.accountType());
-            if (category == null) {
+        Customer customer = customerRepository.findById(accountCreateDto.customerId()).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.CONFLICT, "Customer Id not found")
+        );
+        Category category = categoryRespository.findCategoryByCategoryName(accountCreateDto.accountType());
+        if (category == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Category not found");
-            }
-            Account account = accountMapper.fromAccountCreateDto(accountCreateDto);
-            account.setAccountType(category);
-            account.setAccountName(customer.getFullName());
-            account.setCustomer(customer);
-            account.setAccountNumber(generateRandomAccountNumber());
-            account.setAccountStatus(true);
-            accountRespository.save(account);
+        }
+        Account account = accountMapper.fromAccountCreateDto(accountCreateDto);
+        account.setAccountType(category);
+        account.setAccountName(customer.getFullName());
+        account.setCustomer(customer);
+        Long accountNew = generateRandomAccountNumber();
+        account.setAccountNumber(accountNew);
+        account.setAccountStatus(true);
+        accountRespository.save(account);
     }
+
     @Override
     public AccountEditDto editAccountInfo(AccountEditDto accountEditDto) {
         return null;
     }
+
     @Override
     public void blockAccount(Long id) {
         Account foundAccount = accountRespository.findById(id).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.CONFLICT,"Account not found")
+                () -> new ResponseStatusException(HttpStatus.CONFLICT, "Account not found")
         );
-        if(!foundAccount.getAccountStatus()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"This account already blocked");
-        }else{
+        if (!foundAccount.getAccountStatus()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This account already blocked");
+        } else {
             foundAccount.setAccountStatus(false);
             accountRespository.save(foundAccount);
         }
     }
+
     @Override
     public void unBlockAccount(Long id) {
         Account foundAccount = accountRespository.findById(id).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.CONFLICT,"Account not found")
+                () -> new ResponseStatusException(HttpStatus.CONFLICT, "Account not found")
         );
-        if(foundAccount.getAccountStatus()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"This account already un-blocked");
-        }else{
+        if (foundAccount.getAccountStatus()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This account already un-blocked");
+        } else {
             foundAccount.setAccountStatus(true);
             accountRespository.save(foundAccount);
         }
     }
+
     @Override
     public void deleteById(Long id) {
         Account foundAccount = accountRespository.findById(id).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.CONFLICT,"Account not found")
+                () -> new ResponseStatusException(HttpStatus.CONFLICT, "Account not found")
         );
         try {
             accountRespository.deleteById(id);
-        }catch (DataIntegrityViolationException e) {
+        } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Failed to deleted account: " + Objects.requireNonNull(e.getRootCause()).getMessage());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to deleted customer", e);
         }
     }
+
     @Override
     public List<AccountDetailDto> getAccountList() {
-        List<Account> getAllAccount =accountRespository.findAll();
+        List<Account> getAllAccount = accountRespository.findAll();
         List<AccountDetailDto> listAccount = new ArrayList<>();
         getAllAccount.forEach(
                 account -> {
@@ -97,8 +103,17 @@ public class AccountServiceImpl implements AccountService{
 
     private Long generateRandomAccountNumber() {
         Random random = new Random();
-        long range = 1000000000L; // 9-digit range
-        long fraction = (long) (range * random.nextDouble());
-        return fraction + 1000000000L; // Ensure it's 9 digits by adding 1 billion
+        Long newAccount;
+        Account account;
+
+        do {
+            long range = 1000000000L;
+            long fraction = (long) (range * random.nextDouble());
+            newAccount = fraction + 1000000000L;
+
+            // Check if the account number already exists
+            account = accountRespository.findAccountByAccountNumberAndAccountStatus(newAccount, true);
+        } while (account != null);
+        return newAccount;
     }
 }
