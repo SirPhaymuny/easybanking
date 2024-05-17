@@ -183,6 +183,16 @@ public class TransactionServiceImpl implements TransactionService {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getLocalizedMessage());
             }
     }
+
+    @Override
+    public FundTransferDto listByFtId(String ft) {
+        Transaction transaction = transactionRepository.findTransactionByTransactionId(ft);
+        if(transaction==null){
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Invalid Ft id");
+        }
+        return transactionMapper.fromTransactionToDto(transaction);
+    }
+
     @Override
     public Page<FundTransferDto> findList(int pageNumber, int pageSize) {
         Sort sortById = Sort.by(Sort.Direction.DESC,"id");

@@ -79,4 +79,15 @@ public class TransactionController {
                 .data(transactionService.findList(pageNumber,pageSize))
                 .build();
     }
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/getTransactionById/{id}")
+    BaseSuccess<?> createAccount(@PathVariable String id) {
+        return BaseSuccess.builder()
+                .code(HttpStatus.CREATED.value())
+                .message("Successfully create account")
+                .timestamp(LocalDateTime.now())
+                .status(true)
+                .data(transactionService.listByFtId(id))
+                .build();
+    }
 }

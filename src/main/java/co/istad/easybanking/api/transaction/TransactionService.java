@@ -9,5 +9,6 @@ public interface TransactionService {
     void cashWithdraw(DepositAndWithdrawMoney withdrawMoney);
     void billPayment(BillPayment billPayment);
     String confirmPayment(TransactionAnADto Token);
+    FundTransferDto listByFtId(String ft);
     Page<FundTransferDto> findList(int pageNumber, int pageSize);
 }
