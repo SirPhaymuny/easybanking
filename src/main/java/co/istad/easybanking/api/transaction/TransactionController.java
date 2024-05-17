@@ -54,6 +54,7 @@ public class TransactionController {
                 .data(" ")
                 .build();
     }
+    @PreAuthorize("hasAuthority('SCOPE_staff:write') or hasAuthority('SCOPE_staff:update')")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/billPayment")
     public BaseSuccess<?> billPayment(@RequestBody @Valid BillPayment transactionAnADto){
