@@ -1,5 +1,7 @@
 package co.istad.easybanking.init;
 
+import co.istad.easybanking.api.account.Category;
+import co.istad.easybanking.api.account.CategoryRespository;
 import co.istad.easybanking.api.staff.StaffRepository;
 import co.istad.easybanking.api.user.*;
 import jakarta.annotation.PostConstruct;
@@ -18,6 +20,7 @@ public class DataInput {
     private final UserRepository userRepository;
     private final StaffRepository staffRepository;
     private final AuthorityRepository authorityRepository;
+    private final CategoryRespository categoryRespository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     @PostConstruct
     void init() {
@@ -64,6 +67,18 @@ public class DataInput {
                     .isEnabled(true)
                     .build();
             userRepository.save(userAdmin);
+        }
+
+        if(categoryRespository.findAll().isEmpty()){
+            Category category1 = new Category();
+            category1.setCategoryName("Elite Account");
+            categoryRespository.save(category1);
+            Category category2 = new Category();
+            category1.setCategoryName("Saving Account");
+            categoryRespository.save(category1);
+            Category category3 = new Category();
+            category1.setCategoryName("Teen Account");
+            categoryRespository.save(category1);
         }
 
     }
