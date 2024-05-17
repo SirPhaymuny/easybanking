@@ -8,6 +8,6 @@ public interface TransactionService {
     void depositMoneyToAccount(DepositAndWithdrawMoney depositMoney);
     void cashWithdraw(DepositAndWithdrawMoney withdrawMoney);
     void billPayment(BillPayment billPayment);
-    void confirmPayment(TransactionAnADto Token);
+    String confirmPayment(TransactionAnADto Token);
     Page<FundTransferDto> findList(int pageNumber, int pageSize);
 }

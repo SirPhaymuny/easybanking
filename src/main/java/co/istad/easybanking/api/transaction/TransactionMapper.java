@@ -6,8 +6,10 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TransactionMapper {
-
-    FundToken fromFundDtoToToken(FundTransferDto fundTransferDto);
+    @Mapping(source = "debitAccount.accountName", target = "username")
+    @Mapping(source = "debitAccount.accountNumber", target = "debitAccount")
+    @Mapping(source = "creditAccount.accountNumber", target = "creditAccount")
+    FundToken fromFundDtoToToken(Transaction fundTransferDto);
 
     @Mapping(source = "debitAccount", target = "debitAccount.accountNumber")
     @Mapping(source = "creditAccount", target = "creditAccount.accountNumber")

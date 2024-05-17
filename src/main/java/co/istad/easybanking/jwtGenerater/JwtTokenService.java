@@ -39,12 +39,12 @@ public class JwtTokenService {
                                 .issuedAt(instantNow)
                                 .claim("authorities", authorities)
                                 .subject("Access Token")
-                                .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+                                .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS))
                                 .build();
                 return jwtAccessTokenEncoder.encode(
                                 JwtEncoderParameters.from(jwtClaimsSet)).getTokenValue();
         }
-        public String generateFundToken(FundToken fundTransferDto, String subject) {
+        public String generateFundToken(FundToken fundTransferDto, String subject, String ft) {
                 Instant instantNow = Instant.now();
                 JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                                 .id(fundTransferDto.username())
@@ -53,9 +53,9 @@ public class JwtTokenService {
                                 .claim("Associated",
                                                 fundTransferDto.debitAccount() + "|" + fundTransferDto.creditAccount()
                                                                 + "|" + fundTransferDto.amount() +
-                                                                "|" + fundTransferDto.username())
+                                                                "|" + fundTransferDto.username() + "|" + ft)
                                 .subject("Funds Token")
-                                .expiresAt(Instant.now().plus(1, ChronoUnit.MINUTES))
+                                .expiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
                                 .build();
                 return jwtAccessTokenEncoder.encode(
                                 JwtEncoderParameters.from(jwtClaimsSet)).getTokenValue();

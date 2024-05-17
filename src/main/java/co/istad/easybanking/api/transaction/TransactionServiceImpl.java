@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -38,30 +39,44 @@ public class TransactionServiceImpl implements TransactionService {
                 .findAccountByAccountNumberAndAccountStatus(fundTransferDto.debitAccount(), true);
         if (findDebitAccount == null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Missing Debit account");
-        } else {
-            Account findCredittAccount = accountRespository
-                    .findAccountByAccountNumberAndAccountStatus(fundTransferDto.creditAccount(), true);
-            if (findCredittAccount == null) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Missing Credit account");
-            }
         }
+        Account findCredittAccount = accountRespository
+                .findAccountByAccountNumberAndAccountStatus(fundTransferDto.creditAccount(), true);
+        if (findCredittAccount == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Missing Credit account");
+        }
+        Staff staff = staffRepository.findById(fundTransferDto.StaffId()).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.CONFLICT,"Staff Id not valid")
+        );
         int compareResult = findDebitAccount.getBalance().compareTo(fundTransferDto.amount());
         if (compareResult < 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Debit Amount is less than transfer amount");
         }
+
         if (fundTransferDto.transactionDesc().length() > 90) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Transaction Desc must less than or equal to 90 characters");
         }
+        String ft = generateFt();
         Transaction transaction = transactionMapper.fromFundDtoToTrans(fundTransferDto);
+
+        transaction.setTransactionId(ft);
+        transaction.setDebitAccount(findDebitAccount);
+        transaction.setCreditAccount(findCredittAccount);
+        transaction.setStaffId(staff);
+        transaction.setSender(findDebitAccount.getAccountName());
+
         transaction.setAuthorize(false);
         transaction.setTransferDate(LocalDateTime.now());
         transaction.setTransactionType("Account Transfer");
-        FundToken fundTokenMap = transactionMapper.fromFundDtoToToken(fundTransferDto);
-        String fundToken = jwtTokenService.generateFundToken(fundTokenMap, "Fund Token");
+
         transactionRepository.save(transaction);
+        System.out.println(transaction.getDebitAccount().getId());
+        FundToken fundTokenMap = transactionMapper.fromFundDtoToToken(transaction);
+        System.out.println(fundTokenMap);
+        String fundToken = jwtTokenService.generateFundToken(fundTokenMap, "Fund Token", ft);
+
         return TransactionAnADto.builder()
-                .fTid(generateFt())
                 .transactionToken(fundToken)
                 .build();
     }
@@ -117,16 +132,9 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public void confirmPayment(TransactionAnADto token) {
-        Transaction transaction = transactionRepository.findTransactionByTransactionId(token.fTid());
-        if (transaction == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid Transaction Id");
-        } else {
+    public String confirmPayment(TransactionAnADto token) {
             System.out.println("into else");
             try {
-                if (transaction.getAuthorize()) {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Transaction Id already Used");
-                }
                 /*
                  * Authentication auth = new
                  * BearerTokenAuthenticationToken(token.transactionToken());
@@ -140,8 +148,16 @@ public class TransactionServiceImpl implements TransactionService {
                 String[] values = associated.split("\\|");
                 Long debitAc = Long.valueOf(values[0]);
                 Long creditAc = Long.valueOf(values[1]);
-                BigDecimal amt = BigDecimal.valueOf(Long.parseLong(values[2]));
+                BigDecimal amt = BigDecimal.valueOf(Long.parseLong(values[2])).setScale(2, RoundingMode.UNNECESSARY);
                 String user = values[3];
+                String ft = values[4];
+                Transaction transaction = transactionRepository.findTransactionByTransactionId(ft);
+                if (transaction == null) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid Transaction Id");
+                }
+                if (transaction.getAuthorize()) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Transaction Id already Used");
+                }
                 if (!user.equals(transaction.getDebitAccount().getAccountName())) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is not match");
                 } else {
@@ -162,12 +178,10 @@ public class TransactionServiceImpl implements TransactionService {
                         }
                     }
                 }
-                System.out.println(associated);
-                System.out.println(detail);
+                return ft;
             } catch (ExpiredJwtException | ParseException | JOSEException e) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, e.getLocalizedMessage());
             }
-        }
     }
     @Override
     public Page<FundTransferDto> findList(int pageNumber, int pageSize) {

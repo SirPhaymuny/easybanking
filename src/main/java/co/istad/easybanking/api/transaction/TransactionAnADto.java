@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Builder
 public record TransactionAnADto(
-        String fTid,
         String transactionToken
 ) {
 }

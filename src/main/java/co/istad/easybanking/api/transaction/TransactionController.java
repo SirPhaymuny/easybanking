@@ -32,13 +32,13 @@ public class TransactionController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/confirm")
     public BaseSuccess<?> confirmTransaction(@RequestBody @Valid TransactionAnADto transactionAnADto){
-       transactionService.confirmPayment(transactionAnADto);
+       String ft = transactionService.confirmPayment(transactionAnADto);
         return BaseSuccess.builder()
                 .code(HttpStatus.CREATED.value())
                 .status(true)
                 .timestamp(LocalDateTime.now())
                 .message("Transaction Successful")
-                .data(transactionAnADto.fTid())
+                .data(ft)
                 .build();
     }
     @PreAuthorize("hasAuthority('SCOPE_staff:write') or hasAuthority('SCOPE_staff:update')")
