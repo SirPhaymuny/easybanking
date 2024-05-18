@@ -78,7 +78,7 @@ public class DataInput {
             categoryRespository.save(category1);
             Category category3 = new Category();
             category1.setCategoryName("Teen Account");
-            categoryRespository.save(category1);
+            categoryRespository.saveAll(Arrays.asList(category1,category2,category3));
         }
 
     }
