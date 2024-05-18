@@ -72,12 +72,10 @@ public class DataInput {
         if(categoryRespository.findAll().isEmpty()){
             Category category1 = new Category();
             category1.setCategoryName("Elite Account");
-            categoryRespository.save(category1);
             Category category2 = new Category();
-            category1.setCategoryName("Saving Account");
-            categoryRespository.save(category1);
+            category2.setCategoryName("Saving Account");
             Category category3 = new Category();
-            category1.setCategoryName("Teen Account");
+            category3.setCategoryName("Teen Account");
             categoryRespository.saveAll(Arrays.asList(category1,category2,category3));
         }
 
