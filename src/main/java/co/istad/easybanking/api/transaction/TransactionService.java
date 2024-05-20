@@ -7,7 +7,7 @@ public interface TransactionService {
     TransactionAnADto transferBetweenAccount(FundTransferDto fundTransferDto);
     void depositMoneyToAccount(DepositAndWithdrawMoney depositMoney);
     void cashWithdraw(DepositAndWithdrawMoney withdrawMoney);
-    void billPayment(BillPayment billPayment);
+    String billPayment(BillPayment billPayment);
     String confirmPayment(TransactionAnADto Token);
     FundTransferDto listByFtId(String ft);
     Page<FundTransferDto> findList(int pageNumber, int pageSize);

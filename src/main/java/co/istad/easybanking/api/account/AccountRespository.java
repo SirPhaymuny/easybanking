@@ -19,4 +19,5 @@ public interface AccountRespository extends JpaRepository<Account, Long> {
     void deletePermanently(String username);
 
     Account findAccountByAccountNumberAndAccountStatus(Long id, Boolean accountStatus);
+    Account findAccountByAccountName(String accountName);
 }

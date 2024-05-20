@@ -47,4 +47,7 @@ public class Transaction {
 
     @ManyToOne
     private Staff staffId;
+
+    @ManyToOne
+    private Consumer consumer;
 }

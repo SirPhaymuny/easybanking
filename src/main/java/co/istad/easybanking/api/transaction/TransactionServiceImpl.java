@@ -32,6 +32,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final StaffRepository staffRepository;
     private final JwtTokenService jwtTokenService;
     private final JwtDecoder jwtDecoder;
+    private final ConsumerRepository consumerRepository;
 
     @Override
     public TransactionAnADto transferBetweenAccount(FundTransferDto fundTransferDto) {
@@ -95,42 +96,62 @@ public class TransactionServiceImpl implements TransactionService {
 
     }
     @Override
-    public void billPayment(BillPayment billPayment) {
+    public String billPayment(BillPayment billPayment) {
         try {
             Account account = accountRespository.findAccountByAccountNumberAndAccountStatus(billPayment.account(), true);
             Staff staff = staffRepository.findById(billPayment.staffId()).orElseThrow(
                     () -> new ResponseStatusException(HttpStatus.CONFLICT, "Staff Id is invalid"));
+
+            Consumer consumer = consumerRepository.findConsumerByConsumerId(billPayment.consumerCode());
+            if(consumer==null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Consumer Code is invalid");
+            }
             if (account == null) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Account not found or Deactivated");
             } else {
                 if (!billPayment.billId().equals("EDC") && !billPayment.billId().equals("PPWS")) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Bill Id currently only support EDC and PPWS");
                 } else {
-                    int compareBillAmt = billPayment.amount().compareTo(BigDecimal.valueOf(0));
-                    int compareResult = account.getBalance().compareTo(billPayment.amount());
+                    /*
+                    **********
+                    * Exchange amount if currency is usd
+                    **********
+                    */
+                    int compareResult  = account.getBalance().compareTo(consumer.amount);
+                    int compareBillAmt = consumer.amount.compareTo(BigDecimal.valueOf(0));
                     if (compareResult < 0) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Debit Amount is less than transfer amount");
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Debit Amount is less than bill amount");
                     }
                     if (compareBillAmt < 0 || compareBillAmt == 0) {
                         throw new ResponseStatusException(HttpStatus.CONFLICT, "Bill amount less or equal to Zero");
                     }
                 }
             }
+            Account accountCredit;
+            if(billPayment.billId().equals("EDC")){
+                accountCredit = accountRespository.findAccountByAccountName("EDC of Cambodia");
+            }else {
+                accountCredit = accountRespository.findAccountByAccountName("PPWS of Cambodia");
+            }
             Transaction transaction = transactionMapper.fromBillToTransaction(billPayment);
             String txn = generateFt();
             transaction.setTransactionId(txn);
-            transaction.setTransactionType("Bill Payment");
+            transaction.setTransactionType("Bill Payment of "+billPayment.billId());
             transaction.setAuthorize(false);
             transaction.setTransferDate(LocalDateTime.now());
+            transaction.setConsumer(consumer);
+            transaction.setDebitAccount(account);
+            transaction.setCreditAccount(accountCredit);
             transactionRepository.save(transaction);
+            FundToken fundTokenMap = transactionMapper.fromFundDtoToToken(transaction);
+            return jwtTokenService.generateFundToken(fundTokenMap, "Fund Token", txn);
         }catch (Exception e){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getLocalizedMessage());
         }
     }
 
     @Override
     public String confirmPayment(TransactionAnADto token) {
-            System.out.println("into else");
             try {
                 jwtTokenService.JwtValidate(token.transactionToken());
                 Jwt jwtClaimsSet = jwtDecoder.decode(token.transactionToken());

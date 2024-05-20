@@ -20,5 +20,6 @@ public interface TransactionMapper {
     FundTransferDto fromTransactionToDto(Transaction transaction);
 
     @Mapping(source = "staffId", target = "staffId.staffId")
+    @Mapping(source = "account", target = "debitAccount.accountNumber")
     Transaction fromBillToTransaction(BillPayment billPayment);
 }

@@ -58,13 +58,13 @@ public class TransactionController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/billPayment")
     public BaseSuccess<?> billPayment(@RequestBody @Valid BillPayment transactionAnADto){
-        transactionService.billPayment(transactionAnADto);
+        String ft = transactionService.billPayment(transactionAnADto);
         return BaseSuccess.builder()
                 .code(HttpStatus.CREATED.value())
                 .status(true)
                 .timestamp(LocalDateTime.now())
                 .message("Transaction Successful")
-                .data(" ")
+                .data(ft)
                 .build();
     }
     @ResponseStatus(HttpStatus.CREATED)

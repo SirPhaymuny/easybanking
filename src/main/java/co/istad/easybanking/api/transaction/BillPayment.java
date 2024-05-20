@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 public record BillPayment(
                 Long account,
                 String billId,
-                String consumerCode,
-                BigDecimal amount,
+                Long consumerCode,
                 Long staffId) {
 }
