@@ -33,6 +33,9 @@ public class TransactionServiceImpl implements TransactionService {
     private final JwtTokenService jwtTokenService;
     private final JwtDecoder jwtDecoder;
     private final ConsumerRepository consumerRepository;
+    private static final String BILL_ID_EDC = "EDC";
+    private static final String BILL_ID_PPWS = "PPWS";
+    private static final BigDecimal EXCHANGE_RATE = BigDecimal.valueOf(4100);
 
     @Override
     public TransactionAnADto transferBetweenAccount(FundTransferDto fundTransferDto) {
@@ -80,7 +83,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
     @Override
     public void depositMoneyToAccount(DepositAndWithdrawMoney depositMoney) {
-        Staff staff = staffRepository.findById(depositMoney.StaffId()).orElseThrow(
+        staffRepository.findById(depositMoney.StaffId()).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.CONFLICT, "Staff Id not found"));
         Account account = accountRespository.findAccountByAccountNumberAndAccountStatus(depositMoney.accountNumber(),
                 true);
@@ -97,27 +100,26 @@ public class TransactionServiceImpl implements TransactionService {
     }
     @Override
     public String billPayment(BillPayment billPayment) {
-        try {
-            Account account = accountRespository.findAccountByAccountNumberAndAccountStatus(billPayment.account(), true);
-            Staff staff = staffRepository.findById(billPayment.staffId()).orElseThrow(
-                    () -> new ResponseStatusException(HttpStatus.CONFLICT, "Staff Id is invalid"));
-
-            Consumer consumer = consumerRepository.findConsumerByConsumerId(billPayment.consumerCode());
+        BigDecimal amountBill;
+        Account account = accountRespository.findAccountByAccountNumberAndAccountStatus(billPayment.account(), true);
+        Staff staff = staffRepository.findById(billPayment.staffId()).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.CONFLICT, "Staff Id is invalid"));
+        Consumer consumer = consumerRepository.findConsumerByConsumerId(billPayment.consumerCode());
             if(consumer==null) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Consumer Code is invalid");
             }
             if (account == null) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Account not found or Deactivated");
             } else {
-                if (!billPayment.billId().equals("EDC") && !billPayment.billId().equals("PPWS")) {
+                if (!billPayment.billId().equals(BILL_ID_EDC) && !billPayment.billId().equals(BILL_ID_PPWS)) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Bill Id currently only support EDC and PPWS");
                 } else {
-                    /*
-                    **********
-                    * Exchange amount if currency is usd
-                    **********
-                    */
-                    int compareResult  = account.getBalance().compareTo(consumer.amount);
+                    /*Bill only allow to pay in khmer riel*/
+                    amountBill = consumer.amount;
+                    if(account.getCurrency().equals("USD")){
+                        amountBill= amountBill.divide(EXCHANGE_RATE,2,RoundingMode.HALF_UP);
+                    }
+                    int compareResult  = account.getBalance().compareTo(amountBill);
                     int compareBillAmt = consumer.amount.compareTo(BigDecimal.valueOf(0));
                     if (compareResult < 0) {
                         throw new ResponseStatusException(HttpStatus.CONFLICT, "Debit Amount is less than bill amount");
@@ -133,6 +135,9 @@ public class TransactionServiceImpl implements TransactionService {
             }else {
                 accountCredit = accountRespository.findAccountByAccountName("PPWS of Cambodia");
             }
+
+
+
             Transaction transaction = transactionMapper.fromBillToTransaction(billPayment);
             String txn = generateFt();
             transaction.setTransactionId(txn);
@@ -142,12 +147,11 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setConsumer(consumer);
             transaction.setDebitAccount(account);
             transaction.setCreditAccount(accountCredit);
+            transaction.setAmount(amountBill);
+            transaction.setStaffId(staff);
             transactionRepository.save(transaction);
             FundToken fundTokenMap = transactionMapper.fromFundDtoToToken(transaction);
             return jwtTokenService.generateFundToken(fundTokenMap, "Fund Token", txn);
-        }catch (Exception e){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getLocalizedMessage());
-        }
     }
 
     @Override
@@ -156,12 +160,12 @@ public class TransactionServiceImpl implements TransactionService {
                 jwtTokenService.JwtValidate(token.transactionToken());
                 Jwt jwtClaimsSet = jwtDecoder.decode(token.transactionToken());
                 System.out.println(jwtClaimsSet.getSubject());
-                String detail = jwtClaimsSet.getClaims().toString();
+                //String detail = jwtClaimsSet.getClaims().toString();
                 String associated = jwtClaimsSet.getClaim("Associated");
                 String[] values = associated.split("\\|");
                 Long debitAc = Long.valueOf(values[0]);
                 Long creditAc = Long.valueOf(values[1]);
-                BigDecimal amt = BigDecimal.valueOf(Long.parseLong(values[2])).setScale(2, RoundingMode.UNNECESSARY);
+                BigDecimal amt = new BigDecimal(values[2]);
                 String user = values[3];
                 String ft = values[4];
                 Transaction transaction = transactionRepository.findTransactionByTransactionId(ft);
@@ -223,6 +227,6 @@ public class TransactionServiceImpl implements TransactionService {
             // Append a random character from CHARACTERS string
             sb.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
         }
-        return "FT" + sb.toString();
+        return "FT" + sb;
     }
 }
