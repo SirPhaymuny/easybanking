@@ -4,9 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-
 import co.istad.easybanking.base.BaseError;
-
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
@@ -22,5 +20,4 @@ public class ErrorCustom {
                 .build();
         return new ResponseEntity<>(baseError, e.getStatusCode());
     }
-
 }

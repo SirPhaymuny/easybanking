@@ -1,6 +1,5 @@
 package co.istad.easybanking.api.customer;
 
-
 import co.istad.easybanking.api.specimen.FileUploadDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
 import co.istad.easybanking.base.BaseSuccess;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
